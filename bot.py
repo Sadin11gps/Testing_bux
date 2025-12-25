@@ -10,7 +10,7 @@ from datetime import datetime, timedelta
 # --- কনফিগারেশন ---
 API_TOKEN = '8059084521:AAGuVxr-6-X0Izld_uOD4nazPqd3yaKQgzo' 
 ADMIN_ID = 7702378694
-ADMIN_PASSWORD = "rkxrakib999"
+ADMIN_PASSWORD = "Rdsvai11"
 
 bot = telebot.TeleBot(API_TOKEN)
 
@@ -38,7 +38,7 @@ def init_db():
     try:
         cursor.execute("ALTER TABLE withdraw_history ADD COLUMN status TEXT DEFAULT 'Pending'")
     except:
-        pass # কলাম ইতিমধ্যে থাকলে ইগনোর করবে
+        pass 
         
     conn.commit()
     conn.close()
@@ -74,7 +74,11 @@ def admin_menu():
 
 def get_task_price():
     conn = sqlite3.connect('socialbux.db', check_same_thread=False)
-    price = conn.execute("SELECT value FROM settings WHERE key='task_price'").fetchone()[0]
+    # সেটিংস টেবিল থেকে প্রাইস না পেলে ডিফল্ট ভ্যালু দেবে
+    try:
+        price = conn.execute("SELECT value FROM settings WHERE key='task_price'").fetchone()[0]
+    except:
+        price = 0.1500
     conn.close()
     return price
 
@@ -97,7 +101,7 @@ def start_cmd(message):
             conn.execute("UPDATE users SET ref_count = ref_count + 1 WHERE id=?", (ref_id,))
         conn.commit()
     conn.close()
-    welcome_text = "👋 Welcome!\n\nℹ️ This bot helps you earn money by doing simple tasks.\n\nBy using this Bot, you automatically agree to the Terms of Use.👉 https://telegra.ph/FAQ---EASYSOCIALBUX-12-25"
+    welcome_text = "👋 Welcome!{first_name}\n\nℹ️ This bot helps you earn money by doing simple tasks.\n\nBy using this Bot, you automatically agree to the Terms of Use.👉 https://telegra.ph/FAQ---EASYSOCIALBUX-12-25"
     bot.send_message(user_id, welcome_text, reply_markup=main_menu())
 
 @bot.message_handler(commands=['admin'])
@@ -243,10 +247,9 @@ def handle_all(message):
                     bot.send_message(ADMIN_ID, hist_msg, parse_mode="HTML", reply_markup=markup)
                 except: continue
         
-        # --- ফিক্স: এডমিন উইথড্র হিস্টোরি এবং বাটন ---
+        # --- ফিক্স ১: Withdraw History এবং বাটন ---
         elif text == '💸 Withdraw History':
             conn = sqlite3.connect('socialbux.db', check_same_thread=False)
-            # Pending স্ট্যাটাস সহ ডাটা খুঁজবে
             query = "SELECT w.id, w.user_id, w.amount, w.address, u.username, u.first_name FROM withdraw_history w JOIN users u ON w.user_id = u.id WHERE w.status = 'Pending'"
             rows = conn.execute(query).fetchall()
             conn.close()
@@ -266,12 +269,15 @@ def handle_all(message):
                            f"🏦 <b>Method:</b> TRX\n" \
                            f"📫 <b>Address:</b> <code>{address}</code>"
                 
-                # Approve (wapp) এবং Reject (wrej) বাটন
                 markup = types.InlineKeyboardMarkup()
                 markup.add(types.InlineKeyboardButton("✅ Approve", callback_data=f"wapp_{uid}_{wid}"),
                            types.InlineKeyboardButton("❌ Reject", callback_data=f"wrej_{uid}_{wid}"))
-                
                 bot.send_message(ADMIN_ID, msg_text, parse_mode="HTML", reply_markup=markup)
+
+        # --- ফিক্স ২: Task Price সেট করার লজিক ---
+        elif text == '⚙️ Set Task Price':
+            msg = bot.send_message(ADMIN_ID, "🔢 Enter new task price (e.g., 0.15):")
+            bot.register_next_step_handler(msg, admin_set_price_step)
 
         elif text == '💰 Manage Balance':
             msg = bot.send_message(ADMIN_ID, "Enter User ID:")
@@ -304,7 +310,6 @@ def process_withdraw_address(message, amount):
     conn.execute("INSERT INTO withdraw_history (user_id, amount, method, address, date, status) VALUES (?, ?, 'TRX', ?, ?, 'Pending')", (user_id, amount, address, date_now))
     conn.commit(); conn.close()
     
-    # এডমিনকে নোটিফিকেশন দেওয়া (অপশনাল, কিন্তু ভালো)
     try:
         bot.send_message(ADMIN_ID, f"🔔 New Withdraw Request from ID: {user_id}\nAmount: ${amount}")
     except: pass
@@ -322,6 +327,18 @@ def admin_balance_save_step(message, t_id):
         conn = sqlite3.connect('socialbux.db', check_same_thread=False); conn.execute("UPDATE users SET balance = balance + ? WHERE id=?", (amt, t_id)); conn.commit(); conn.close()
         bot.send_message(ADMIN_ID, "✅ Success.")
     except: bot.send_message(ADMIN_ID, "Error.")
+
+# --- নতুন সাব ফাংশন: Task Price আপডেট ---
+def admin_set_price_step(message):
+    try:
+        new_price = float(message.text)
+        conn = sqlite3.connect('socialbux.db', check_same_thread=False)
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('task_price', ?)", (new_price,))
+        conn.commit()
+        conn.close()
+        bot.send_message(ADMIN_ID, f"✅ Task price updated to ${new_price:.4f}", reply_markup=admin_menu())
+    except ValueError:
+        bot.send_message(ADMIN_ID, "❌ Invalid number. Please enter a valid amount.", reply_markup=admin_menu())
 
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
@@ -353,16 +370,14 @@ def callback_handler(call):
             bot.send_message(uid, "❌ Task Rejected.")
             bot.edit_message_text(f"❌ Rejected Task for User {uid}", call.message.chat.id, call.message.message_id)
 
-        # --- Withdraw Approval Logic (নতুন যোগ করা হয়েছে) ---
+        # --- Withdraw Approval Logic ---
         elif act == 'wapp':
-            # Approve: স্ট্যাটাস আপডেট হবে 'Paid'
             cursor.execute("UPDATE withdraw_history SET status='Paid' WHERE id=?", (tid,))
             conn.commit()
             bot.send_message(uid, "✅ Your withdrawal has been paid!")
             bot.edit_message_text(f"✅ Withdraw Paid for User {uid}", call.message.chat.id, call.message.message_id)
         
         elif act == 'wrej':
-            # Reject: ব্যালেন্স রিফান্ড (ফেরত) দিতে হবে এবং স্ট্যাটাস 'Rejected'
             cursor.execute("SELECT amount FROM withdraw_history WHERE id=?", (tid,))
             row = cursor.fetchone()
             if row:
