@@ -392,5 +392,5 @@ def callback_handler(call):
     except Exception as e:
         print(e)
 
-int("(◕‿◕) 𝘊𝘙𝘈𝘡𝘠 𝘔𝘖𝘕𝘌𝘠 𝘉𝘜𝘟 (◕‿◕) Bot is Running...")
+int("CrazyMone Bot is Running...")
 bot.infinity_polling()
