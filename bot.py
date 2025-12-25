@@ -390,7 +390,8 @@ def callback_handler(call):
 
         conn.close()
     except Exception as e:
-        print(e)
+        print("Error in callback:", e)
 
-int("CrazyMone Bot is Running...")
+print("🤖 CrazyMone Bot is Running Successfully!")
+
 bot.infinity_polling()
