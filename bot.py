@@ -101,7 +101,7 @@ def start_cmd(message):
             conn.execute("UPDATE users SET ref_count = ref_count + 1 WHERE id=?", (ref_id,))
         conn.commit()
     conn.close()
-    welcome_text = "👋 Welcome!\n\nℹ️ This bot helps you earn money by doing simple tasks.\n\nBy using this Bot, you automatically agree to the Terms of Use.👉 https://telegra.ph/FAQ---EASYSOCIALBUX-12-25"
+    welcome_text = "👋 Welcome!\n\nℹ️ This bot helps you earn money by doing simple tasks.\n\nBy using this Bot, you automatically agree to the Terms of Use.👉 https://telegra.ph/FAQ----CRAZY-MONEY-BUX-12-25-2"
     bot.send_message(user_id, welcome_text, reply_markup=main_menu())
 
 @bot.message_handler(commands=['admin'])
