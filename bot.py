@@ -8,7 +8,7 @@ import re
 from datetime import datetime, timedelta
 
 # --- কনফিগারেশন ---
-API_TOKEN = '8059084521:AAGuVxr-6-X0Izld_uOD4nazPqd3yaKQgzo' 
+API_TOKEN = '8576119064:AAE5NkXGHRQCq1iPAM5muiU1oh_5KFJGENk' 
 ADMIN_ID = 7702378694
 ADMIN_PASSWORD = "Rdsvai11"
 
@@ -101,7 +101,7 @@ def start_cmd(message):
             conn.execute("UPDATE users SET ref_count = ref_count + 1 WHERE id=?", (ref_id,))
         conn.commit()
     conn.close()
-    welcome_text = "👋 Welcome!{first_name}\n\nℹ️ This bot helps you earn money by doing simple tasks.\n\nBy using this Bot, you automatically agree to the Terms of Use.👉 https://telegra.ph/FAQ---EASYSOCIALBUX-12-25"
+    welcome_text = "👋 Welcome!\n\nℹ️ This bot helps you earn money by doing simple tasks.\n\nBy using this Bot, you automatically agree to the Terms of Use.👉 https://telegra.ph/FAQ---EASYSOCIALBUX-12-25"
     bot.send_message(user_id, welcome_text, reply_markup=main_menu())
 
 @bot.message_handler(commands=['admin'])
@@ -142,7 +142,7 @@ def handle_all(message):
 
     # --- ২. FAQ বাটন ---
     elif text == '🤔 FAQ':
-        faq_msg = "🤔 <b>View help at:</b>\n📄 https://telegra.ph/FAQ---EASYSOCIALBUX-12-25"
+        faq_msg = "🤔 <b>View help at:</b>\n📄 https://telegra.ph/FAQ---(◕‿◕) 𝘊𝘙𝘈𝘡𝘠 𝘔𝘖𝘕𝘌𝘠 𝘉𝘜𝘟 (◕‿◕)-12-25"
         return bot.send_message(user_id, faq_msg, parse_mode="HTML")
 
     # --- ৩. History বাটন ---
@@ -392,5 +392,5 @@ def callback_handler(call):
     except Exception as e:
         print(e)
 
-print("EasySocialBux Bot is Running...")
+int("(◕‿◕) 𝘊𝘙𝘈𝘡𝘠 𝘔𝘖𝘕𝘌𝘠 𝘉𝘜𝘟 (◕‿◕) Bot is Running...")
 bot.infinity_polling()
