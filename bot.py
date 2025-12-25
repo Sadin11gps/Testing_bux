@@ -142,7 +142,7 @@ def handle_all(message):
 
     # --- ২. FAQ বাটন ---
     elif text == '🤔 FAQ':
-        faq_msg = "🤔 <b>View help at:</b>\n📄 https://telegra.ph/FAQ---(◕‿◕) 𝘊𝘙𝘈𝘡𝘠 𝘔𝘖𝘕𝘌𝘠 𝘉𝘜𝘟 (◕‿◕)-12-25"
+        faq_msg = "🤔 <b>View help at:</b>\n📄 https://telegra.ph/FAQ----CRAZY-MONEY-BUX-12-25-2"
         return bot.send_message(user_id, faq_msg, parse_mode="HTML")
 
     # --- ৩. History বাটন ---
