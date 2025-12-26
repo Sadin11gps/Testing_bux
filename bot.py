@@ -1,18 +1,22 @@
 # -*- coding: utf-8 -*-
+from flask import Flask, request, abort
 import telebot
 from telebot import types
 import sqlite3
 import random
 import string
 import re
-from datetime import datetime, timedelta
+from datetime import datetime
+import os
 
 # --- কনফিগারেশন ---
-API_TOKEN = '8576119064:AAE5NkXGHRQCq1iPAM5muiU1oh_5KFJGENk' 
+API_TOKEN = os.getenv('BOT_TOKEN', '8576119064:AAE5NkXGHRQCq1iPAM5muiU1oh_5KFJGENk')  # Render-এ BOT_TOKEN env variable যোগ করবি
 ADMIN_ID = 7702378694
 ADMIN_PASSWORD = "Rdsvai11"
 
 bot = telebot.TeleBot(API_TOKEN)
+
+app = Flask(__name__)
 
 # --- ডাটাবেস সেটআপ ---
 def init_db():
@@ -26,7 +30,6 @@ def init_db():
     cursor.execute('''CREATE TABLE IF NOT EXISTS task_history 
                       (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, 
                        details TEXT, status TEXT, date TEXT, amount REAL)''')
-    # withdraw_history টেবিল তৈরি (যদি না থাকে)
     cursor.execute('''CREATE TABLE IF NOT EXISTS withdraw_history 
                       (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, 
                        amount REAL, method TEXT, address TEXT, date TEXT, status TEXT DEFAULT 'Pending')''')
@@ -34,7 +37,6 @@ def init_db():
                       (key TEXT PRIMARY KEY, value REAL)''')
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('task_price', 0.1500)")
     
-    # --- ফিক্স: যদি পুরনো ডাটাবেসে status কলাম না থাকে, তবে যোগ করা হবে ---
     try:
         cursor.execute("ALTER TABLE withdraw_history ADD COLUMN status TEXT DEFAULT 'Pending'")
     except:
@@ -74,7 +76,6 @@ def admin_menu():
 
 def get_task_price():
     conn = sqlite3.connect('socialbux.db', check_same_thread=False)
-    # সেটিংস টেবিল থেকে প্রাইস না পেলে ডিফল্ট ভ্যালু দেবে
     try:
         price = conn.execute("SELECT value FROM settings WHERE key='task_price'").fetchone()[0]
     except:
@@ -125,11 +126,9 @@ def handle_all(message):
     if text in ['❌ Cancel', 'English', '🏠 Exit Admin']:
         return bot.send_message(user_id, "🏠 Home.", reply_markup=main_menu())
 
-    # --- ১. Profile বাটন ---
     if text == '👤 Profile':
         conn = sqlite3.connect('socialbux.db', check_same_thread=False)
         bal = conn.execute("SELECT balance FROM users WHERE id=?", (user_id,)).fetchone()[0]
-        # ফিক্স: শুধুমাত্র পেইড উইথড্রগুলো যোগফল দেখাবে
         wd_res = conn.execute("SELECT SUM(amount) FROM withdraw_history WHERE user_id=? AND status='Paid'", (user_id,)).fetchone()[0]
         wd_total = wd_res if wd_res else 0.0
         conn.close()
@@ -140,12 +139,10 @@ def handle_all(message):
                       f"🔒 <b>Account:</b> Active✅"
         return bot.send_message(user_id, profile_msg, parse_mode="HTML")
 
-    # --- ২. FAQ বাটন ---
     elif text == '🤔 FAQ':
         faq_msg = "🤔 <b>View help at:</b>\n📄 https://telegra.ph/FAQ----CRAZY-MONEY-BUX-12-25-2"
         return bot.send_message(user_id, faq_msg, parse_mode="HTML")
 
-    # --- ৩. History বাটন ---
     elif text == '📋 History':
         conn = sqlite3.connect('socialbux.db', check_same_thread=False)
         rows = conn.execute("SELECT details, status FROM task_history WHERE user_id=? ORDER BY id DESC LIMIT 15", (user_id,)).fetchall()
@@ -247,7 +244,6 @@ def handle_all(message):
                     bot.send_message(ADMIN_ID, hist_msg, parse_mode="HTML", reply_markup=markup)
                 except: continue
         
-        # --- ফিক্স ১: Withdraw History এবং বাটন ---
         elif text == '💸 Withdraw History':
             conn = sqlite3.connect('socialbux.db', check_same_thread=False)
             query = "SELECT w.id, w.user_id, w.amount, w.address, u.username, u.first_name FROM withdraw_history w JOIN users u ON w.user_id = u.id WHERE w.status = 'Pending'"
@@ -274,7 +270,6 @@ def handle_all(message):
                            types.InlineKeyboardButton("❌ Reject", callback_data=f"wrej_{uid}_{wid}"))
                 bot.send_message(ADMIN_ID, msg_text, parse_mode="HTML", reply_markup=markup)
 
-        # --- ফিক্স ২: Task Price সেট করার লজিক ---
         elif text == '⚙️ Set Task Price':
             msg = bot.send_message(ADMIN_ID, "🔢 Enter new task price (e.g., 0.15):")
             bot.register_next_step_handler(msg, admin_set_price_step)
@@ -305,7 +300,6 @@ def process_withdraw_address(message, amount):
     address = message.text
     date_now = datetime.now().strftime("%Y-%m-%d %H:%M")
     conn = sqlite3.connect('socialbux.db', check_same_thread=False)
-    # ফিক্স: স্ট্যাটাস 'Pending' হিসেবে সেভ করা হচ্ছে
     conn.execute("UPDATE users SET balance = balance - ? WHERE id=?", (amount, user_id))
     conn.execute("INSERT INTO withdraw_history (user_id, amount, method, address, date, status) VALUES (?, ?, 'TRX', ?, ?, 'Pending')", (user_id, amount, address, date_now))
     conn.commit(); conn.close()
@@ -328,7 +322,6 @@ def admin_balance_save_step(message, t_id):
         bot.send_message(ADMIN_ID, "✅ Success.")
     except: bot.send_message(ADMIN_ID, "Error.")
 
-# --- নতুন সাব ফাংশন: Task Price আপডেট ---
 def admin_set_price_step(message):
     try:
         new_price = float(message.text)
@@ -344,10 +337,9 @@ def admin_set_price_step(message):
 def callback_handler(call):
     try:
         data = call.data.split('_')
-        act, uid, tid = data[0], data[1], data[2] # tid এখানে task_id অথবা withdraw_id হিসেবে কাজ করবে
+        act, uid, tid = data[0], data[1], data[2]
         conn = sqlite3.connect('socialbux.db', check_same_thread=False); cursor = conn.cursor()
         
-        # --- Task Approval Logic ---
         if act == 'app':
             cursor.execute("SELECT amount FROM task_history WHERE id=?", (tid,))
             res = cursor.fetchone()
@@ -370,7 +362,6 @@ def callback_handler(call):
             bot.send_message(uid, "❌ Task Rejected.")
             bot.edit_message_text(f"❌ Rejected Task for User {uid}", call.message.chat.id, call.message.message_id)
 
-        # --- Withdraw Approval Logic ---
         elif act == 'wapp':
             cursor.execute("UPDATE withdraw_history SET status='Paid' WHERE id=?", (tid,))
             conn.commit()
@@ -392,6 +383,22 @@ def callback_handler(call):
     except Exception as e:
         print("Error in callback:", e)
 
-print("🤖 CrazyMone Bot is Running Successfully!")
+print("🤖 CrazyMone Bot is Running Successfully with Webhook!")
 
-bot.infinity_polling()
+# --- Webhook routes ---
+@app.route('/' + API_TOKEN, methods=['POST'])
+def get_webhook():
+    if request.headers.get('content-type') == 'application/json':
+        json_string = request.get_data().decode('utf-8')
+        update = telebot.types.Update.de_json(json_string)
+        bot.process_new_updates([update])
+        return 'ok', 200
+    else:
+        abort(403)
+
+@app.route('/')
+def index():
+    return "Bot is running!"
+
+if __name__ == '__main__':
+    app.run(host='0.0.0.0', port=int(os.getenv('PORT', 5000)))
