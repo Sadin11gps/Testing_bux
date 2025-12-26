@@ -10,13 +10,68 @@ from datetime import datetime
 import os
 
 # --- কনফিগারেশন ---
-API_TOKEN = os.getenv('BOT_TOKEN', '8576119064:AAE5NkXGHRQCq1iPAM5muiU1oh_5KFJGENk')  # Render-এ BOT_TOKEN env variable যোগ করবি
+API_TOKEN = os.getenv('BOT_TOKEN', '8576119064:AAE5NkXGHRQCq1iPAM5muiU1oh_5KFJGENk')
 ADMIN_ID = 7702378694
 ADMIN_PASSWORD = "Rdsvai11"
+CHANNEL_USERNAME = "amrrdsteam"
 
 bot = telebot.TeleBot(API_TOKEN)
 
 app = Flask(__name__)
+
+# --- ল্যাঙ্গুয়েজ ডিকশনারি ---
+LANGUAGES = {
+    'en': {
+        'welcome': "👋 Welcome!\n\nℹ️ This bot helps you earn money by doing simple tasks.\n\nBy using this Bot, you automatically agree to the Terms of Use.👉 https://telegra.ph/FAQ----CRAZY-MONEY-BUX-12-25-2",
+        'channel_join': "⚠️ Please join our channel to use the bot:",
+        'channel_joined': "✅ Verified! Now you can use the bot.",
+        'balance': "💰 Your balance: ${:.4f}",
+        'tasks': "👇 Please select a task:",
+        'task_desc': "⏳ Review time: 74 min ⏳\n\n📋 Task: 📱 G account (FAST CHECK)\n\n📄 Description: 🔐 MANDATORY!\nYou must use only the email and password provided by the Telegram bot to register.",
+        'start_task': "👉 Press the button to confirm registration or cancel the task:",
+        'submitted': "✅ Submitted for review!",
+        'referrals': "👥 Referrals: {}\n💰 Earned: ${:.4f}\n🔗 Link: {}",
+        'withdraw': "📤 Choose method:",
+        'insufficient': "❌ Insufficient balance!",
+        'enter_amount': "🔢 Min $1.50\n📤 Enter Amount:",
+        'enter_address': "📤 Enter TRX Address:",
+        'withdrawn': "✅ Withdrawal submitted!",
+        'profile': "👤 <b>{}</b>\n\n\n💰 <b>Total Balance:</b> \( {:.4f}\n\n📤 <b>Total Withdraw:</b> \){:.4f}\n\n🔒 <b>Account:</b> Active✅",
+        'history_empty': "📭 You haven't completed any tasks yet.",
+        'history_header': "📋 <b>Your Task History:</b>\n\n",
+        'leaderboard': "🏆 <b>Top 10 Earners</b>\n\n",
+        'stats': "📊 <b>Bot Statistics</b>\n\n👥 Total Users: {}\n💰 Total Earned: \( {:.4f}\n📤 Total Withdrawn: \){:.4f}",
+        'language': "🌍 Choose language:",
+        'lang_set': "✅ Language set to English!",
+        'no_pending_tasks': "📭 No pending tasks.",
+        'no_pending_withdraw': "📭 No pending withdrawals.",
+    },
+    'bn': {
+        'welcome': "👋 স্বাগতম!\n\nℹ️ এই বটে সিম্পল টাস্ক করে ডলার আর্ন করুন।\n\nবট ব্যবহার করে আপনি অটোম্যাটিক টার্মস অ্যাগ্রি করছেন।👉 https://telegra.ph/FAQ----CRAZY-MONEY-BUX-12-25-2",
+        'channel_join': "⚠️ বট ব্যবহার করতে আমাদের চ্যানেলে জয়েন করুন:",
+        'channel_joined': "✅ ভেরিফাইড! এখন বট ব্যবহার করতে পারবেন।",
+        'balance': "💰 আপনার ব্যালেন্স: ${:.4f}",
+        'tasks': "👇 একটা টাস্ক সিলেক্ট করুন:",
+        'task_desc': "⏳ রিভিউ টাইম: ৭৪ মিনিট ⏳\n\n📋 টাস্ক: 📱 G account (FAST CHECK)\n\n📄 বর্ণনা: 🔐 অবশ্যই বট দেওয়া ইমেইল ও পাসওয়ার্ড দিয়ে রেজিস্টার করতে হবে।",
+        'start_task': "👉 রেজিস্ট্রেশন কনফার্ম করুন বা ক্যানসেল করুন:",
+        'submitted': "✅ রিভিউয়ের জন্য সাবমিট করা হয়েছে!",
+        'referrals': "👥 রেফারেল: {}\n💰 আর্ন: ${:.4f}\n🔗 লিঙ্ক: {}",
+        'withdraw': "📤 পেমেন্ট মেথড সিলেক্ট করুন:",
+        'insufficient': "❌ ব্যালেন্স যথেষ্ট নয়!",
+        'enter_amount': "🔢 মিনিমাম $1.50\n📤 অ্যামাউন্ট দিন:",
+        'enter_address': "📤 TRX অ্যাড্রেস দিন:",
+        'withdrawn': "✅ উইথড্র রিকোয়েস্ট করা হয়েছে!",
+        'profile': "👤 <b>{}</b>\n\n\n💰 <b>টোটাল ব্যালেন্স:</b> \( {:.4f}\n\n📤 <b>টোটাল উইথড্র:</b> \){:.4f}\n\n🔒 <b>অ্যাকাউন্ট:</b> অ্যাকটিভ✅",
+        'history_empty': "📭 আপনি এখনো কোনো টাস্ক করেননি।",
+        'history_header': "📋 <b>আপনার টাস্ক হিস্ট্রি:</b>\n\n",
+        'leaderboard': "🏆 <b>টপ ১০ আর্নার</b>\n\n",
+        'stats': "📊 <b>বট স্ট্যাটিস্টিকস</b>\n\n👥 টোটাল ইউজার: {}\n💰 টোটাল আর্ন: \( {:.4f}\n📤 টোটাল উইথড্র: \){:.4f}",
+        'language': "🌍 ভাষা সিলেক্ট করুন:",
+        'lang_set': "✅ ভাষা বাংলায় সেট করা হয়েছে!",
+        'no_pending_tasks': "📭 কোনো পেন্ডিং টাস্ক নেই।",
+        'no_pending_withdraw': "📭 কোনো পেন্ডিং উইথড্র নেই।",
+    }
+}
 
 # --- ডাটাবেস সেটআপ ---
 def init_db():
@@ -26,7 +81,7 @@ def init_db():
                       (id INTEGER PRIMARY KEY, first_name TEXT, username TEXT, 
                        balance REAL DEFAULT 0.0, referred_by INTEGER, 
                        ref_count INTEGER DEFAULT 0, total_ref_earn REAL DEFAULT 0.0,
-                       pending_task TEXT)''')
+                       pending_task TEXT, language TEXT DEFAULT 'en')''')
     cursor.execute('''CREATE TABLE IF NOT EXISTS task_history 
                       (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER, 
                        details TEXT, status TEXT, date TEXT, amount REAL)''')
@@ -37,6 +92,10 @@ def init_db():
                       (key TEXT PRIMARY KEY, value REAL)''')
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('task_price', 0.1500)")
     
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN language TEXT DEFAULT 'en'")
+    except:
+        pass
     try:
         cursor.execute("ALTER TABLE withdraw_history ADD COLUMN status TEXT DEFAULT 'Pending'")
     except:
@@ -62,9 +121,11 @@ def generate_full_creds():
     return f_name, l_name, password, email, recovery
 
 # --- কিবোর্ডস ---
-def main_menu():
+def main_menu(lang='en'):
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
-    markup.add('💰 Balance', '📋 Tasks', '📤 Withdraw', '👤 Profile', '📋 History', '🤔 FAQ', '👥 My Referrals', '🌍 Language')
+    markup.add('💰 Balance', '📋 Tasks', '📤 Withdraw', '👤 Profile')
+    markup.add('📋 History', '🤔 FAQ', '👥 My Referrals', '🌍 Language')
+    markup.add('🏆 Leaderboard', '📊 Statistics')
     return markup
 
 def admin_menu():
@@ -72,6 +133,12 @@ def admin_menu():
     markup.add('📝 Task History', '💸 Withdraw History')
     markup.add('💰 Manage Balance', '⚙️ Set Task Price')
     markup.add('🏠 Exit Admin')
+    return markup
+
+def language_menu():
+    markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
+    markup.add('🇺🇸 English', '🇧🇩 বাংলা')
+    markup.add('🔙 Back')
     return markup
 
 def get_task_price():
@@ -84,27 +151,121 @@ def get_task_price():
     return price
 
 def is_menu_button(text):
-    buttons = ['💰 Balance', '📋 Tasks', '📤 Withdraw', '👤 Profile', '📋 History', '🤔 FAQ', '👥 My Referrals', '🌍 Language', '❌ Cancel', '🏠 Exit Admin', 'English', 'TRX', '✅ Account registered', '▶️ Start']
+    buttons = ['💰 Balance', '📋 Tasks', '📤 Withdraw', '👤 Profile', '📋 History', '🤔 FAQ', '👥 My Referrals', '🌍 Language', '❌ Cancel', '🏠 Exit Admin', 'TRX', '✅ Account registered', '▶️ Start', '🏆 Leaderboard', '📊 Statistics', '🔙 Back', '🇺🇸 English', '🇧🇩 বাংলা']
     return text in buttons
 
-# --- কমান্ড হ্যান্ডলার ---
+# --- চ্যানেল ভেরিফিকেশন ---
+def is_member(user_id):
+    try:
+        member = bot.get_chat_member(f"@{CHANNEL_USERNAME}", user_id)
+        return member.status in ['member', 'administrator', 'creator']
+    except:
+        return False
+
+# --- হেল্পার ফাংশন ল্যাঙ্গুয়েজ পাওয়ার জন্য ---
+def get_user_lang(user_id):
+    conn = sqlite3.connect('socialbux.db', check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute("SELECT language FROM users WHERE id=?", (user_id,))
+    row = cursor.fetchone()
+    conn.close()
+    return row[0] if row else 'en'
+
+# --- /start ---
 @bot.message_handler(commands=['start'])
 def start_cmd(message):
     user_id = message.from_user.id
     ref_id = message.text.split()[1] if len(message.text.split()) > 1 else None
+
+    lang = get_user_lang(user_id)
+    texts = LANGUAGES[lang]
+
+    if not is_member(user_id):
+        markup = types.InlineKeyboardMarkup()
+        markup.add(types.InlineKeyboardButton("Join Channel", url=f"https://t.me/{CHANNEL_USERNAME}"))
+        markup.add(types.InlineKeyboardButton("I Joined ✅", callback_data="check_join"))
+        bot.send_message(user_id, texts['channel_join'] + f" https://t.me/{CHANNEL_USERNAME}", reply_markup=markup)
+        return
+
     conn = sqlite3.connect('socialbux.db', check_same_thread=False)
     cursor = conn.cursor()
     cursor.execute("SELECT id FROM users WHERE id=?", (user_id,))
     if cursor.fetchone() is None:
-        cursor.execute("INSERT INTO users (id, first_name, username, referred_by) VALUES (?, ?, ?, ?)", 
-                       (user_id, message.from_user.first_name, message.from_user.username, ref_id))
+        cursor.execute("INSERT INTO users (id, first_name, username, referred_by, language) VALUES (?, ?, ?, ?, ?)", 
+                       (user_id, message.from_user.first_name, message.from_user.username, ref_id, lang))
         if ref_id:
             conn.execute("UPDATE users SET ref_count = ref_count + 1 WHERE id=?", (ref_id,))
         conn.commit()
     conn.close()
-    welcome_text = "👋 Welcome!\n\nℹ️ This bot helps you earn money by doing simple tasks.\n\nBy using this Bot, you automatically agree to the Terms of Use.👉 https://telegra.ph/FAQ----CRAZY-MONEY-BUX-12-25-2"
-    bot.send_message(user_id, welcome_text, reply_markup=main_menu())
 
+    bot.send_message(user_id, texts['welcome'], reply_markup=main_menu(lang))
+
+@bot.callback_query_handler(func=lambda call: call.data == "check_join")
+def check_join_callback(call):
+    user_id = call.from_user.id
+    lang = get_user_lang(user_id)
+    texts = LANGUAGES[lang]
+
+    if is_member(user_id):
+        bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=texts['channel_joined'])
+        bot.send_message(user_id, texts['welcome'], reply_markup=main_menu(lang))
+    else:
+        bot.answer_callback_query(call.id, "You haven't joined the channel yet!", show_alert=True)
+
+# --- ল্যাঙ্গুয়েজ চেঞ্জ ---
+@bot.message_handler(func=lambda m: m.text in ['🇺🇸 English', '🇧🇩 বাংলা'])
+def change_language(message):
+    user_id = message.from_user.id
+    new_lang = 'en' if message.text == '🇺🇸 English' else 'bn'
+    conn = sqlite3.connect('socialbux.db', check_same_thread=False)
+    conn.execute("UPDATE users SET language=? WHERE id=?", (new_lang, user_id))
+    conn.commit()
+    conn.close()
+    texts = LANGUAGES[new_lang]
+    bot.send_message(user_id, texts['lang_set'], reply_markup=main_menu(new_lang))
+
+# --- Language বাটন ---
+@bot.message_handler(func=lambda m: m.text == '🌍 Language')
+def language_handler(message):
+    lang = get_user_lang(message.from_user.id)
+    texts = LANGUAGES[lang]
+    bot.send_message(message.from_user.id, texts['language'], reply_markup=language_menu())
+
+# --- লিডারবোর্ড ---
+@bot.message_handler(func=lambda m: m.text == '🏆 Leaderboard')
+def leaderboard(message):
+    user_id = message.from_user.id
+    lang = get_user_lang(user_id)
+    texts = LANGUAGES[lang]
+
+    conn = sqlite3.connect('socialbux.db', check_same_thread=False)
+    rows = conn.execute("SELECT first_name, balance FROM users ORDER BY balance DESC LIMIT 10").fetchall()
+    conn.close()
+
+    text = texts['leaderboard']
+    for i, (name, bal) in enumerate(rows, 1):
+        text += f"{i}. {name} - ${bal:.4f}\n"
+    if not rows:
+        text += "No users yet."
+    bot.send_message(user_id, text)
+
+# --- স্ট্যাটিস্টিকস ---
+@bot.message_handler(func=lambda m: m.text == '📊 Statistics')
+def statistics(message):
+    user_id = message.from_user.id
+    lang = get_user_lang(user_id)
+    texts = LANGUAGES[lang]
+
+    conn = sqlite3.connect('socialbux.db', check_same_thread=False)
+    total_users = conn.execute("SELECT COUNT(*) FROM users").fetchone()[0]
+    total_earned = conn.execute("SELECT SUM(balance) FROM users").fetchone()[0] or 0
+    total_withdrawn = conn.execute("SELECT SUM(amount) FROM withdraw_history WHERE status='Paid'").fetchone()[0] or 0
+    conn.close()
+
+    text = texts['stats'].format(total_users, total_earned, total_withdrawn)
+    bot.send_message(user_id, text)
+
+# --- বাকি সব তোর আগের কোডের মতোই (lang যোগ করে) ---
 @bot.message_handler(commands=['admin'])
 def admin_login(message):
     if message.from_user.id == ADMIN_ID:
@@ -117,14 +278,16 @@ def verify_admin(message):
     else:
         bot.send_message(message.chat.id, "❌ Wrong Password.")
 
-# --- বাটন এবং টেক্সট হ্যান্ডলার ---
 @bot.message_handler(func=lambda message: True)
 def handle_all(message):
     user_id = message.from_user.id
     text = message.text
 
-    if text in ['❌ Cancel', 'English', '🏠 Exit Admin']:
-        return bot.send_message(user_id, "🏠 Home.", reply_markup=main_menu())
+    lang = get_user_lang(user_id)
+    texts = LANGUAGES[lang]
+
+    if text in ['❌ Cancel', '🏠 Exit Admin', '🔙 Back']:
+        return bot.send_message(user_id, "🏠 Home.", reply_markup=main_menu(lang))
 
     if text == '👤 Profile':
         conn = sqlite3.connect('socialbux.db', check_same_thread=False)
@@ -133,10 +296,7 @@ def handle_all(message):
         wd_total = wd_res if wd_res else 0.0
         conn.close()
         
-        profile_msg = f"👤 <b>{message.from_user.first_name}</b>\n\n\n" \
-                      f"💰 <b>Total Balance:</b> ${bal:.4f}\n\n" \
-                      f"📤 <b>Total Withdraw:</b> ${wd_total:.4f}\n\n" \
-                      f"🔒 <b>Account:</b> Active✅"
+        profile_msg = texts['profile'].format(message.from_user.first_name, bal, wd_total)
         return bot.send_message(user_id, profile_msg, parse_mode="HTML")
 
     elif text == '🤔 FAQ':
@@ -148,8 +308,8 @@ def handle_all(message):
         rows = conn.execute("SELECT details, status FROM task_history WHERE user_id=? ORDER BY id DESC LIMIT 15", (user_id,)).fetchall()
         conn.close()
         if not rows:
-            return bot.send_message(user_id, "📭 You haven't completed any tasks yet.")
-        history_txt = "📋 <b>Your Task History:</b>\n\n"
+            return bot.send_message(user_id, texts['history_empty'])
+        history_txt = texts['history_header']
         for r in rows:
             details, status = r
             try:
@@ -163,17 +323,16 @@ def handle_all(message):
         conn = sqlite3.connect('socialbux.db', check_same_thread=False)
         bal = conn.execute("SELECT balance FROM users WHERE id=?", (user_id,)).fetchone()[0]
         conn.close()
-        bot.send_message(user_id, f"💰 Your balance: ${bal:.4f}")
+        bot.send_message(user_id, texts['balance'].format(bal))
 
     elif text == '📋 Tasks':
         p = get_task_price()
         m = types.ReplyKeyboardMarkup(resize_keyboard=True).row(f'📱 G account (FAST CHECK) (${p:.4f})').row('❌ Cancel')
-        bot.send_message(user_id, "👇 Please select a task:", reply_markup=m)
+        bot.send_message(user_id, texts['tasks'], reply_markup=m)
 
     elif '📱 G account' in text:
         m = types.ReplyKeyboardMarkup(resize_keyboard=True).add('▶️ Start').add('❌ Cancel')
-        task_desc = "⏳ Review time: 74 min ⏳\n\n📋 Task: 📱 G account (FAST CHECK)\n\n📄 Description: 🔐 MANDATORY!\nYou must use only the email and password provided by the Telegram bot to register."
-        bot.send_message(user_id, task_desc, reply_markup=m)
+        bot.send_message(user_id, texts['task_desc'], reply_markup=m)
 
     elif text == '▶️ Start':
         fn, ln, p, e, rec = generate_full_creds()
@@ -184,7 +343,7 @@ def handle_all(message):
         main_msg = f"First name: <code>{fn}</code>\nLast name: <code>{ln}</code>\nPassword: <code>{p}</code>\nEmail: <code>{e}</code>\nRecovery email: <code>{rec}</code>\n\n⚠️ IMPORTANT: MANDATORY add this recovery email to account settings after registration!"
         bot.send_message(user_id, main_msg, parse_mode="HTML")
         m = types.ReplyKeyboardMarkup(resize_keyboard=True).add('✅ Account registered').add('❌ Cancel')
-        bot.send_message(user_id, "👉 Press the button to confirm registration or cancel the task:", reply_markup=m)
+        bot.send_message(user_id, texts['start_task'], reply_markup=m)
 
     elif text == '✅ Account registered':
         try:
@@ -203,7 +362,7 @@ def handle_all(message):
                 cursor.execute("INSERT INTO task_history (user_id, details, status, date, amount) VALUES (?, ?, 'Pending', ?, ?)", (user_id, creds, date_n, price))
                 tid = cursor.lastrowid
                 conn.commit(); conn.close()
-                bot.send_message(user_id, "✅ Submitted for review!", reply_markup=main_menu())
+                bot.send_message(user_id, texts['submitted'], reply_markup=main_menu(lang))
                 admin_msg = f"🔔 <b>New Task Submission</b>\n\n👤 <b>User ID:</b> <code>{user_id}</code>\n👤 <b>Name:</b> {fn_user}\n👤 <b>Username:</b> {u_name}\n\n      🔰<b>Task Information</b>🔰\n\n📧 <b>Gmail:</b> <code>{gmail}</code>\n🔑 <b>Pass:</b> <code>{password}</code>\n🔄 <b>Recovery:</b> <code>{recovery}</code>"
                 adm_m = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("Approve", callback_data=f"app_{user_id}_{tid}"), types.InlineKeyboardButton("Reject", callback_data=f"rej_{user_id}_{tid}"))
                 bot.send_message(ADMIN_ID, admin_msg, parse_mode="HTML", reply_markup=adm_m)
@@ -214,17 +373,16 @@ def handle_all(message):
         res = conn.execute("SELECT ref_count, total_ref_earn FROM users WHERE id=?", (user_id,)).fetchone()
         conn.close()
         r_link = f"https://t.me/{bot.get_me().username}?start={user_id}"
-        bot.send_message(user_id, f"👥 Referrals: {res[0]}\n💰 Earned: ${res[1]:.4f}\n🔗 Link: {r_link}")
+        bot.send_message(user_id, texts['referrals'].format(res[0], res[1], r_link))
 
     elif text == '📤 Withdraw':
         m = types.ReplyKeyboardMarkup(resize_keyboard=True).add('TRX').add('❌ Cancel')
-        bot.send_message(user_id, "📤 Choose method:", reply_markup=m)
+        bot.send_message(user_id, texts['withdraw'], reply_markup=m)
 
     elif text == 'TRX':
-        msg = bot.send_message(user_id, "🔢 Min $1.50\n📤 Enter Amount:")
+        msg = bot.send_message(user_id, texts['enter_amount'])
         bot.register_next_step_handler(msg, process_withdraw_amount)
 
-    # --- এডমিন বাটন ---
     elif user_id == ADMIN_ID:
         if text == '📝 Task History':
             conn = sqlite3.connect('socialbux.db', check_same_thread=False)
@@ -232,7 +390,7 @@ def handle_all(message):
             rows = conn.execute(query).fetchall()
             conn.close()
             if not rows:
-                bot.send_message(ADMIN_ID, "📭 No pending tasks.")
+                bot.send_message(ADMIN_ID, texts['no_pending_tasks'])
                 return
             for r in rows:
                 try:
@@ -251,7 +409,7 @@ def handle_all(message):
             conn.close()
             
             if not rows:
-                bot.send_message(ADMIN_ID, "📭 No pending withdrawals.")
+                bot.send_message(ADMIN_ID, texts['no_pending_withdraw'])
                 return
 
             for row in rows:
@@ -278,9 +436,11 @@ def handle_all(message):
             msg = bot.send_message(ADMIN_ID, "Enter User ID:")
             bot.register_next_step_handler(msg, admin_balance_id_step)
 
-# --- সাব ফাংশনসমূহ ---
+# --- সাব ফাংশন ---
 def process_withdraw_amount(message):
     user_id = message.from_user.id
+    lang = get_user_lang(user_id)
+    texts = LANGUAGES[lang]
     if is_menu_button(message.text): return handle_all(message)
     try:
         amount = float(message.text)
@@ -288,14 +448,16 @@ def process_withdraw_amount(message):
         bal = conn.execute("SELECT balance FROM users WHERE id=?", (user_id,)).fetchone()[0]
         conn.close()
         if bal < amount:
-            bot.send_message(user_id, "❌ Insufficient balance!")
+            bot.send_message(user_id, texts['insufficient'])
             return
-        msg = bot.send_message(user_id, "📤 Enter TRX Address:")
+        msg = bot.send_message(user_id, texts['enter_address'])
         bot.register_next_step_handler(msg, lambda m: process_withdraw_address(m, amount))
     except: bot.send_message(user_id, "⚠️ Invalid amount.")
 
 def process_withdraw_address(message, amount):
     user_id = message.from_user.id
+    lang = get_user_lang(user_id)
+    texts = LANGUAGES[lang]
     if is_menu_button(message.text): return handle_all(message)
     address = message.text
     date_now = datetime.now().strftime("%Y-%m-%d %H:%M")
@@ -308,7 +470,7 @@ def process_withdraw_address(message, amount):
         bot.send_message(ADMIN_ID, f"🔔 New Withdraw Request from ID: {user_id}\nAmount: ${amount}")
     except: pass
     
-    bot.send_message(user_id, "✅ Withdrawal submitted!", reply_markup=main_menu())
+    bot.send_message(user_id, texts['withdrawn'], reply_markup=main_menu(lang))
 
 def admin_balance_id_step(message):
     t_id = message.text
@@ -383,7 +545,7 @@ def callback_handler(call):
     except Exception as e:
         print("Error in callback:", e)
 
-print("🤖 CrazyMone Bot is Running Successfully with Webhook!")
+print("🤖 Crazy Money Bux Bot is Running with New Features!")
 
 # --- Webhook routes ---
 @app.route('/' + API_TOKEN, methods=['POST'])
