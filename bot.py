@@ -293,7 +293,8 @@ def admin_login(message):
     if message.from_user.id == ADMIN_ID:
         msg = bot.send_message(message.chat.id, "🔐 Enter Admin Password:")
         bot.register_next_step_handler(msg, verify_admin)
-    # কোনো else নেই – অন্য কেউ দিলে কোনো রিপ্লাই দেবে না
+    else:
+        bot.send_message(message.chat.id, "You are not authorized.")
 
 def verify_admin(message):
     if message.text == ADMIN_PASSWORD:
