@@ -13,7 +13,7 @@ import os
 API_TOKEN = os.getenv('BOT_TOKEN', '8576119064:AAE5NkXGHRQCq1iPAM5muiU1oh_5KFJGENk')
 ADMIN_ID = 7702378694
 ADMIN_PASSWORD = "Rdsvai11"
-CHANNEL_USERNAME = "amrrdsteam"
+CHANNEL_USERNAME = "amrrdsteam"  # তোর চ্যানেল ইউজারনেম (without @)
 
 bot = telebot.TeleBot(API_TOKEN)
 
@@ -45,6 +45,12 @@ LANGUAGES = {
         'lang_set': "✅ Language set to English!",
         'no_pending_tasks': "📭 No pending tasks.",
         'no_pending_withdraw': "📭 No pending withdrawals.",
+        'admin_broadcast': "📢 Enter message to broadcast to all users:",
+        'admin_send': "📩 Enter User ID to send message:",
+        'admin_send_msg': "Enter message for the user:",
+        'broadcast_success': "✅ Broadcast sent to {} users!",
+        'send_success': "✅ Message sent to user!",
+        'user_not_found': "❌ User not found.",
     },
     'bn': {
         'welcome': "👋 স্বাগতম!\n\nℹ️ এই বটে সিম্পল টাস্ক করে ডলার আর্ন করুন।\n\nবট ব্যবহার করে আপনি অটোম্যাটিক টার্মস অ্যাগ্রি করছেন।👉 https://telegra.ph/FAQ----CRAZY-MONEY-BUX-12-25-2",
@@ -70,6 +76,12 @@ LANGUAGES = {
         'lang_set': "✅ ভাষা বাংলায় সেট করা হয়েছে!",
         'no_pending_tasks': "📭 কোনো পেন্ডিং টাস্ক নেই।",
         'no_pending_withdraw': "📭 কোনো পেন্ডিং উইথড্র নেই।",
+        'admin_broadcast': "📢 সবাইকে মেসেজ পাঠানোর জন্য মেসেজ লিখুন:",
+        'admin_send': "📩 ইউজার আইডি দিন:",
+        'admin_send_msg': "ইউজারের জন্য মেসেজ লিখুন:",
+        'broadcast_success': "✅ {} জন ইউজারকে ব্রডকাস্ট পাঠানো হয়েছে!",
+        'send_success': "✅ মেসেজ পাঠানো হয়েছে!",
+        'user_not_found': "❌ ইউজার পাওয়া যায়নি।",
     }
 }
 
@@ -132,6 +144,7 @@ def admin_menu():
     markup = types.ReplyKeyboardMarkup(row_width=2, resize_keyboard=True)
     markup.add('📝 Task History', '💸 Withdraw History')
     markup.add('💰 Manage Balance', '⚙️ Set Task Price')
+    markup.add('📢 Broadcast', '📩 Send Message')
     markup.add('🏠 Exit Admin')
     return markup
 
@@ -151,7 +164,7 @@ def get_task_price():
     return price
 
 def is_menu_button(text):
-    buttons = ['💰 Balance', '📋 Tasks', '📤 Withdraw', '👤 Profile', '📋 History', '🤔 FAQ', '👥 My Referrals', '🌍 Language', '❌ Cancel', '🏠 Exit Admin', 'TRX', '✅ Account registered', '▶️ Start', '🏆 Leaderboard', '📊 Statistics', '🔙 Back', '🇺🇸 English', '🇧🇩 বাংলা']
+    buttons = ['💰 Balance', '📋 Tasks', '📤 Withdraw', '👤 Profile', '📋 History', '🤔 FAQ', '👥 My Referrals', '🌍 Language', '❌ Cancel', '🏠 Exit Admin', 'TRX', '✅ Account registered', '▶️ Start', '🏆 Leaderboard', '📊 Statistics', '🔙 Back', '🇺🇸 English', '🇧🇩 বাংলা', '📢 Broadcast', '📩 Send Message']
     return text in buttons
 
 # --- চ্যানেল ভেরিফিকেশন ---
@@ -162,7 +175,7 @@ def is_member(user_id):
     except:
         return False
 
-# --- হেল্পার ফাংশন ল্যাঙ্গুয়েজ পাওয়ার জন্য ---
+# --- হেল্পার ফাংশন ---
 def get_user_lang(user_id):
     conn = sqlite3.connect('socialbux.db', check_same_thread=False)
     cursor = conn.cursor()
@@ -265,7 +278,7 @@ def statistics(message):
     text = texts['stats'].format(total_users, total_earned, total_withdrawn)
     bot.send_message(user_id, text)
 
-# --- বাকি সব তোর আগের কোডের মতোই (lang যোগ করে) ---
+# --- অ্যাডমিন লগইন ---
 @bot.message_handler(commands=['admin'])
 def admin_login(message):
     if message.from_user.id == ADMIN_ID:
@@ -278,6 +291,62 @@ def verify_admin(message):
     else:
         bot.send_message(message.chat.id, "❌ Wrong Password.")
 
+# --- অ্যাডমিনে নতুন বাটন: Broadcast & Send Message ---
+@bot.message_handler(func=lambda m: m.text == '📢 Broadcast' and m.from_user.id == ADMIN_ID)
+def admin_broadcast(message):
+    msg = bot.send_message(ADMIN_ID, LANGUAGES['en']['admin_broadcast'])
+    bot.register_next_step_handler(msg, broadcast_message)
+
+def broadcast_message(message):
+    if message.text == '🏠 Exit Admin':
+        bot.send_message(ADMIN_ID, "Exited admin panel.", reply_markup=main_menu())
+        return
+
+    conn = sqlite3.connect('socialbux.db', check_same_thread=False)
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM users")
+    users = cursor.fetchall()
+    conn.close()
+
+    sent_count = 0
+    for user in users:
+        try:
+            bot.send_message(user[0], message.text)
+            sent_count += 1
+        except:
+            pass
+
+    bot.send_message(ADMIN_ID, LANGUAGES['en']['broadcast_success'].format(sent_count), reply_markup=admin_menu())
+
+@bot.message_handler(func=lambda m: m.text == '📩 Send Message' and m.from_user.id == ADMIN_ID)
+def admin_send(message):
+    msg = bot.send_message(ADMIN_ID, LANGUAGES['en']['admin_send'])
+    bot.register_next_step_handler(msg, admin_send_user_id)
+
+def admin_send_user_id(message):
+    if message.text == '🏠 Exit Admin':
+        bot.send_message(ADMIN_ID, "Exited admin panel.", reply_markup=main_menu())
+        return
+
+    try:
+        target_id = int(message.text)
+        msg = bot.send_message(ADMIN_ID, LANGUAGES['en']['admin_send_msg'])
+        bot.register_next_step_handler(msg, lambda m: admin_send_final(m, target_id))
+    except:
+        bot.send_message(ADMIN_ID, "❌ Invalid User ID.", reply_markup=admin_menu())
+
+def admin_send_final(message, target_id):
+    if message.text == '🏠 Exit Admin':
+        bot.send_message(ADMIN_ID, "Exited admin panel.", reply_markup=main_menu())
+        return
+
+    try:
+        bot.send_message(target_id, message.text)
+        bot.send_message(ADMIN_ID, LANGUAGES['en']['send_success'], reply_markup=admin_menu())
+    except:
+        bot.send_message(ADMIN_ID, LANGUAGES['en']['user_not_found'], reply_markup=admin_menu())
+
+# --- মেইন হ্যান্ডলার ---
 @bot.message_handler(func=lambda message: True)
 def handle_all(message):
     user_id = message.from_user.id
@@ -436,7 +505,7 @@ def handle_all(message):
             msg = bot.send_message(ADMIN_ID, "Enter User ID:")
             bot.register_next_step_handler(msg, admin_balance_id_step)
 
-# --- সাব ফাংশন ---
+# --- সাব ফাংশনসমূহ ---
 def process_withdraw_amount(message):
     user_id = message.from_user.id
     lang = get_user_lang(user_id)
@@ -545,7 +614,7 @@ def callback_handler(call):
     except Exception as e:
         print("Error in callback:", e)
 
-print("🤖 Crazy Money Bux Bot is Running with New Features!")
+print("🤖 Crazy Money Bux Bot is Running with All Features!")
 
 # --- Webhook routes ---
 @app.route('/' + API_TOKEN, methods=['POST'])
