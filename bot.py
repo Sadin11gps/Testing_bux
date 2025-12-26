@@ -13,7 +13,7 @@ import os
 API_TOKEN = os.getenv('BOT_TOKEN', '8576119064:AAE5NkXGHRQCq1iPAM5muiU1oh_5KFJGENk')
 ADMIN_ID = 7702378694
 ADMIN_PASSWORD = "Rdsvai11"
-CHANNEL_USERNAME = "amrrdsteam"  # তোর চ্যানেল ইউজারনেম (without @)
+CHANNEL_USERNAME = "amrrdsteam"
 
 bot = telebot.TeleBot(API_TOKEN)
 
@@ -104,6 +104,15 @@ def init_db():
                       (key TEXT PRIMARY KEY, value REAL)''')
     cursor.execute("INSERT OR IGNORE INTO settings (key, value) VALUES ('task_price', 0.1500)")
     
+    # পুরানো ডাটাবেসের জন্য কলাম যোগ (রেফারেল রিসেট না হয়)
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN ref_count INTEGER DEFAULT 0")
+    except:
+        pass
+    try:
+        cursor.execute("ALTER TABLE users ADD COLUMN total_ref_earn REAL DEFAULT 0.0")
+    except:
+        pass
     try:
         cursor.execute("ALTER TABLE users ADD COLUMN language TEXT DEFAULT 'en'")
     except:
@@ -284,6 +293,8 @@ def admin_login(message):
     if message.from_user.id == ADMIN_ID:
         msg = bot.send_message(message.chat.id, "🔐 Enter Admin Password:")
         bot.register_next_step_handler(msg, verify_admin)
+    else:
+        bot.send_message(message.chat.id, "You are not authorized.")
 
 def verify_admin(message):
     if message.text == ADMIN_PASSWORD:
