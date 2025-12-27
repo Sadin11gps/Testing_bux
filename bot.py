@@ -5,6 +5,7 @@ from telebot import types
 import sqlite3
 import random
 import string
+import re
 from datetime import datetime
 import os
 
@@ -188,7 +189,7 @@ def get_task_price():
     return price
 
 def is_menu_button(text):
-    buttons = ['💰 Balance', '📋 Tasks', '📤 Withdraw', '👤 Profile', '📋 History', '🤔 FAQ', '👥 My Referrals', '🌍 Language', '❌ Cancel', '🏠 Exit Admin', 'TRX', '✅ Account registered', '▶️ Start', '🏆 Leaderboard', '📊 Statistics', '🔙 Back', '🇺🇸 English', '🇧🇩 বাংলা', '📢 Broadcast', '📩 Send Message', '🚫 Block User', '✅ Unblock User', '📝 Task History', '💸 Withdraw History', '💰 Manage Balance', '⚙️ Set Task Price']
+    buttons = ['💰 Balance', '📋 Tasks', '📤 Withdraw', '👤 Profile', '📋 History', '🤔 FAQ', '👥 My Referrals', '🌍 Language', '❌ Cancel', '🏠 Exit Admin', 'TRX', '✅ Account registered', '▶️ Start', '🏆 Leaderboard', '📊 Statistics', '🔙 Back', '🇺🇸 English', '🇧🇩 বাংলা', '📢 Broadcast', '📩 Send Message', '🚫 Block User', '✅ Unblock User']
     return text in buttons
 
 # --- চ্যানেল ভেরিফিকেশন ---
@@ -328,83 +329,13 @@ def verify_admin(message):
     else:
         bot.send_message(message.chat.id, "❌ Wrong Password.")
 
-# --- অ্যাডমিনে Broadcast ---
-@bot.message_handler(func=lambda m: m.text == '📢 Broadcast' and m.from_user.id == ADMIN_ID)
-def admin_broadcast(message):
-    admin_lang = get_user_lang(ADMIN_ID)
-    texts = LANGUAGES[admin_lang]
-    msg = bot.send_message(ADMIN_ID, texts['admin_broadcast'])
-    bot.register_next_step_handler(msg, broadcast_message)
-
-def broadcast_message(message):
-    admin_lang = get_user_lang(ADMIN_ID)
-    texts = LANGUAGES[admin_lang]
-    if message.text == '🏠 Exit Admin':
-        bot.send_message(ADMIN_ID, "Exited admin panel.", reply_markup=main_menu())
-        return
-
-    conn = sqlite3.connect('socialbux.db', check_same_thread=False)
-    cursor = conn.cursor()
-    cursor.execute("SELECT id FROM users")
-    users = cursor.fetchall()
-    conn.close()
-
-    sent_count = 0
-    for user in users:
-        try:
-            bot.send_message(user[0], message.text)
-            sent_count += 1
-        except:
-            pass
-
-    bot.send_message(ADMIN_ID, texts['broadcast_success'].format(sent_count), reply_markup=admin_menu())
-
-# --- অ্যাডমিনে Send Message ---
-@bot.message_handler(func=lambda m: m.text == '📩 Send Message' and m.from_user.id == ADMIN_ID)
-def admin_send(message):
-    admin_lang = get_user_lang(ADMIN_ID)
-    texts = LANGUAGES[admin_lang]
-    msg = bot.send_message(ADMIN_ID, texts['admin_send'])
-    bot.register_next_step_handler(msg, admin_send_user_id)
-
-def admin_send_user_id(message):
-    admin_lang = get_user_lang(ADMIN_ID)
-    texts = LANGUAGES[admin_lang]
-    if message.text == '🏠 Exit Admin':
-        bot.send_message(ADMIN_ID, "Exited admin panel.", reply_markup=main_menu())
-        return
-
-    try:
-        target_id = int(message.text)
-        msg = bot.send_message(ADMIN_ID, texts['admin_send_msg'])
-        bot.register_next_step_handler(msg, lambda m: admin_send_final(m, target_id))
-    except:
-        bot.send_message(ADMIN_ID, "❌ Invalid User ID.", reply_markup=admin_menu())
-
-def admin_send_final(message, target_id):
-    admin_lang = get_user_lang(ADMIN_ID)
-    texts = LANGUAGES[admin_lang]
-    if message.text == '🏠 Exit Admin':
-        bot.send_message(ADMIN_ID, "Exited admin panel.", reply_markup=main_menu())
-        return
-
-    try:
-        bot.send_message(target_id, message.text)
-        bot.send_message(ADMIN_ID, texts['send_success'], reply_markup=admin_menu())
-    except:
-        bot.send_message(ADMIN_ID, texts['user_not_found'], reply_markup=admin_menu())
-
 # --- অ্যাডমিনে Block/Unblock ---
 @bot.message_handler(func=lambda m: m.text == '🚫 Block User' and m.from_user.id == ADMIN_ID)
 def admin_block_user(message):
-    admin_lang = get_user_lang(ADMIN_ID)
-    texts = LANGUAGES[admin_lang]
-    msg = bot.send_message(ADMIN_ID, texts['admin_block'])
+    msg = bot.send_message(ADMIN_ID, LANGUAGES['en']['admin_block'])
     bot.register_next_step_handler(msg, block_user_step)
 
 def block_user_step(message):
-    admin_lang = get_user_lang(ADMIN_ID)
-    texts = LANGUAGES[admin_lang]
     if message.text == '🏠 Exit Admin':
         bot.send_message(ADMIN_ID, "Exited admin panel.", reply_markup=main_menu())
         return
@@ -414,9 +345,9 @@ def block_user_step(message):
         conn.execute("UPDATE users SET blocked=1 WHERE id=?", (target_id,))
         conn.commit()
         conn.close()
-        bot.send_message(ADMIN_ID, texts['user_blocked'], reply_markup=admin_menu())
+        bot.send_message(ADMIN_ID, LANGUAGES['en']['user_blocked'], reply_markup=admin_menu())
         try:
-            bot.send_message(target_id, texts['blocked_message'])
+            bot.send_message(target_id, LANGUAGES['en']['blocked_message'])
         except:
             pass
     except:
@@ -424,14 +355,10 @@ def block_user_step(message):
 
 @bot.message_handler(func=lambda m: m.text == '✅ Unblock User' and m.from_user.id == ADMIN_ID)
 def admin_unblock_user(message):
-    admin_lang = get_user_lang(ADMIN_ID)
-    texts = LANGUAGES[admin_lang]
-    msg = bot.send_message(ADMIN_ID, texts['admin_unblock'])
+    msg = bot.send_message(ADMIN_ID, LANGUAGES['en']['admin_unblock'])
     bot.register_next_step_handler(msg, unblock_user_step)
 
 def unblock_user_step(message):
-    admin_lang = get_user_lang(ADMIN_ID)
-    texts = LANGUAGES[admin_lang]
     if message.text == '🏠 Exit Admin':
         bot.send_message(ADMIN_ID, "Exited admin panel.", reply_markup=main_menu())
         return
@@ -441,7 +368,7 @@ def unblock_user_step(message):
         conn.execute("UPDATE users SET blocked=0 WHERE id=?", (target_id,))
         conn.commit()
         conn.close()
-        bot.send_message(ADMIN_ID, texts['user_unblocked'], reply_markup=admin_menu())
+        bot.send_message(ADMIN_ID, LANGUAGES['en']['user_unblocked'], reply_markup=admin_menu())
     except:
         bot.send_message(ADMIN_ID, "❌ Invalid User ID.", reply_markup=admin_menu())
 
@@ -546,7 +473,7 @@ def handle_all(message):
                 admin_msg = f"🔔 <b>New Task Submission</b>\n\n👤 <b>User ID:</b> <code>{user_id}</code>\n👤 <b>Name:</b> {fn_user}\n👤 <b>Username:</b> {u_name}\n\n      🔰<b>Task Information</b>🔰\n\n📧 <b>Gmail:</b> <code>{gmail}</code>\n🔑 <b>Pass:</b> <code>{password}</code>\n🔄 <b>Recovery:</b> <code>{recovery}</code>"
                 adm_m = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("Approve", callback_data=f"app_{user_id}_{tid}"), types.InlineKeyboardButton("Reject", callback_data=f"rej_{user_id}_{tid}"))
                 bot.send_message(ADMIN_ID, admin_msg, parse_mode="HTML", reply_markup=adm_m)
-        except:
+        except Exception as e:
             bot.send_message(user_id, "❌ Error.")
         return
 
@@ -568,7 +495,67 @@ def handle_all(message):
         bot.register_next_step_handler(msg, process_withdraw_amount)
         return
 
-# --- সাব ফাংশন ---
+    elif user_id == ADMIN_ID:
+        if text == '📝 Task History':
+            conn = sqlite3.connect('socialbux.db', check_same_thread=False)
+            query = "SELECT task_history.id, task_history.user_id, task_history.details, users.first_name, users.username FROM task_history JOIN users ON task_history.user_id = users.id WHERE task_history.status = 'Pending' LIMIT 10"
+            rows = conn.execute(query).fetchall()
+            conn.close()
+            if not rows:
+                bot.send_message(ADMIN_ID, texts['no_pending_tasks'])
+                return
+            for r in rows:
+                try:
+                    tid, uid, details, name, uname = r
+                    parts = details.split('|')
+                    gmail = parts[2].split(': ')[1]
+                    password = parts[3].split(': ')[1]
+                    recovery = parts[4].split(': ')[1]
+                    hist_msg = f"🔔 <b>New Task Submission</b>\n\n👤 <b>User ID:</b> <code>{uid}</code>\n👤 <b>Name:</b> {name}\n\n      🔰<b>Task Information</b>🔰\n\n📧 <b>Gmail:</b> <code>{gmail}</code>\n🔑 <b>Pass:</b> <code>{password}</code>\n🔄 <b>Recovery:</b> <code>{recovery}</code>"
+                    markup = types.InlineKeyboardMarkup().add(types.InlineKeyboardButton("Approve", callback_data=f"app_{uid}_{tid}"), types.InlineKeyboardButton("Reject", callback_data=f"rej_{uid}_{tid}"))
+                    bot.send_message(ADMIN_ID, hist_msg, parse_mode="HTML", reply_markup=markup)
+                except:
+                    continue
+            return
+        
+        elif text == '💸 Withdraw History':
+            conn = sqlite3.connect('socialbux.db', check_same_thread=False)
+            query = "SELECT w.id, w.user_id, w.amount, w.address, u.username, u.first_name FROM withdraw_history w JOIN users u ON w.user_id = u.id WHERE w.status = 'Pending'"
+            rows = conn.execute(query).fetchall()
+            conn.close()
+            
+            if not rows:
+                bot.send_message(ADMIN_ID, texts['no_pending_withdraw'])
+                return
+
+            for row in rows:
+                wid, uid, amount, address, username, firstname = row
+                uname = f"@{username}" if username else "N/A"
+                
+                msg_text = f"💸 <b>Withdraw Request</b>\n\n" \
+                           f"👤 <b>User:</b> {firstname} ({uname})\n" \
+                           f"🆔 <b>ID:</b> <code>{uid}</code>\n" \
+                           f"💰 <b>Amount:</b> ${amount}\n" \
+                           f"🏦 <b>Method:</b> TRX\n" \
+                           f"📫 <b>Address:</b> <code>{address}</code>"
+                
+                markup = types.InlineKeyboardMarkup()
+                markup.add(types.InlineKeyboardButton("✅ Approve", callback_data=f"wapp_{uid}_{wid}"),
+                           types.InlineKeyboardButton("❌ Reject", callback_data=f"wrej_{uid}_{wid}"))
+                bot.send_message(ADMIN_ID, msg_text, parse_mode="HTML", reply_markup=markup)
+            return
+
+        elif text == '⚙️ Set Task Price':
+            msg = bot.send_message(ADMIN_ID, "🔢 Enter new task price (e.g., 0.15):")
+            bot.register_next_step_handler(msg, admin_set_price_step)
+            return
+
+        elif text == '💰 Manage Balance':
+            msg = bot.send_message(ADMIN_ID, "Enter User ID:")
+            bot.register_next_step_handler(msg, admin_balance_id_step)
+            return
+
+# --- সাব ফাংশনসমূহ ---
 def process_withdraw_amount(message):
     user_id = message.from_user.id
     lang = get_user_lang(user_id)
@@ -611,7 +598,33 @@ def process_withdraw_address(message, amount):
     
     bot.send_message(user_id, texts['withdrawn'], reply_markup=main_menu())
 
-# --- কলব্যাক হ্যান্ডলার ---
+def admin_balance_id_step(message):
+    t_id = message.text
+    msg = bot.send_message(ADMIN_ID, "Enter Amount:")
+    bot.register_next_step_handler(msg, lambda m: admin_balance_save_step(m, t_id))
+
+def admin_balance_save_step(message, t_id):
+    try:
+        amt = float(message.text)
+        conn = sqlite3.connect('socialbux.db', check_same_thread=False)
+        conn.execute("UPDATE users SET balance = balance + ? WHERE id=?", (amt, t_id))
+        conn.commit()
+        conn.close()
+        bot.send_message(ADMIN_ID, "✅ Success.")
+    except:
+        bot.send_message(ADMIN_ID, "Error.")
+
+def admin_set_price_step(message):
+    try:
+        new_price = float(message.text)
+        conn = sqlite3.connect('socialbux.db', check_same_thread=False)
+        conn.execute("INSERT OR REPLACE INTO settings (key, value) VALUES ('task_price', ?)", (new_price,))
+        conn.commit()
+        conn.close()
+        bot.send_message(ADMIN_ID, f"✅ Task price updated to ${new_price:.4f}", reply_markup=admin_menu())
+    except ValueError:
+        bot.send_message(ADMIN_ID, "❌ Invalid number. Please enter a valid amount.", reply_markup=admin_menu())
+
 @bot.callback_query_handler(func=lambda call: True)
 def callback_handler(call):
     try:
@@ -663,7 +676,7 @@ def callback_handler(call):
     except Exception as e:
         print("Error in callback:", e)
 
-print("🤖 Crazy Money Bux Bot is Running - Final Complete Version!")
+print("🤖 Crazy Money Bux Bot is Running - Final Version!")
 
 # --- Webhook routes ---
 @app.route('/' + API_TOKEN, methods=['POST'])
